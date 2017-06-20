@@ -1,0 +1,58 @@
+<?php
+
+namespace Drupal\backend;
+
+use Drupal\Core\Breadcrumb\Breadcrumb;
+use Drupal\Core\Breadcrumb\BreadcrumbBuilderInterface;
+use Drupal\Core\Link;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\node\NodeInterface;
+
+/**
+ * Class Breadcrumbs.
+ *
+ * @package Drupal\backend
+ */
+class Breadcrumbs implements BreadcrumbBuilderInterface {
+  use StringTranslationTrait;
+
+  /**
+   * This is a redefined method.
+   *
+   * {@inheritDoc}
+   */
+  public function applies(RouteMatchInterface $route_match) {
+    return $route_match->getRouteName() == 'entity.node.canonical' && $route_match->getParameter('node') instanceof NodeInterface;
+  }
+
+  /**
+   * This is a redefined method.
+   *
+   * {@inheritDoc}
+   */
+  public function build(RouteMatchInterface $route_match) {
+    $node = $route_match->getParameter('node');
+    $breadcrumb = new Breadcrumb();
+
+    // By setting a "cache context" to the "url", each requested URL gets it's
+    // own cache. This way a single breadcrumb isn't cached for all pages on the
+    // site.
+    $breadcrumb->addCacheContexts(["url"]);
+
+    // By adding "cache tags" for this specific node, the cache is invalidated
+    // when the node is edited.
+    $breadcrumb->addCacheTags(["node:{$node->nid->value}"]);
+
+    // Add "Home" breadcrumb link.
+    $breadcrumb->addLink(Link::createFromRoute($this->t('Home'), '<front>'));
+
+    // Given we have a taxonomy term reference field named "field_tags" and that
+    // field has data, add that term as a breadcrumb link.
+    if (!empty($node->field_tags->entity)) {
+      $breadcrumb->addLink($node->field_tags->entity->toLink());
+    }
+    return $breadcrumb;
+  }
+
+}

@@ -1,0 +1,5 @@
+services:
+  backend.breadcrumbs:
+    class: Drupal\backend\Breadcrumbs
+    tags:
+      - { name: breadcrumb_builder, priority: 100 }
